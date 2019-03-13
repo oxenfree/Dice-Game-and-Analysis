@@ -1,7 +1,13 @@
 from models import Streak, StreakWin
-from data_io import read_in_all_files_as_one, write_out_game_data
+from data_io import (
+    read_in_each_file_as_one,
+    write_out_game_data,
+    get_file_names
+)
 from typing import Callable, List
 from collections import OrderedDict
+from payout_calculation_service import calculate_payout
+import config
 
 TEST_DIR = 'data/test'
 DATA_FIXTURE = [
@@ -50,8 +56,13 @@ def test_streak_and_win_logic() -> None:
 
 @print_passing
 def test_read_in_all_csv_files(directory) -> None:
-    result_ordered_dict: OrderedDict = read_in_all_files_as_one(directory)
-    assert result_ordered_dict
+    names = get_file_names(directory)
+    for name in names:
+        result_ordered_dict: OrderedDict = read_in_each_file_as_one(
+            name,
+            directory
+        )
+        assert result_ordered_dict
 
 
 @print_passing
@@ -60,6 +71,19 @@ def test_write_out_data(data, field_names, directory) -> None:
     assert written_rows == 1
 
 
+@print_passing
+def test_payback_calculation() -> None:
+    zero_win = calculate_payout(0)
+    one_win = calculate_payout(1)
+    two_wins = calculate_payout(2)
+    jackpot = calculate_payout(3)
+    assert zero_win == config.PAYBACK_SCHEDULE['zero'] * config.ANTE
+    assert one_win == config.PAYBACK_SCHEDULE['one'] * config.ANTE
+    assert two_wins == config.PAYBACK_SCHEDULE['two'] * config.ANTE
+    assert jackpot == config.PAYBACK_SCHEDULE['jackpot'] * config.ANTE
+
+
 test_write_out_data(DATA_FIXTURE, FIELD_NAME_FIXTURE, TEST_DIR)
 test_read_in_all_csv_files(TEST_DIR)
 test_streak_and_win_logic()
+test_payback_calculation()

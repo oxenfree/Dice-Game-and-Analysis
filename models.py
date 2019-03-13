@@ -40,7 +40,7 @@ class Player:
         self.had_to_use_atm: int = 0
         self.regular_hands_won: int = 0
         self.hands_lost: int = 0
-        self.hands_pushed: int = 0
+        # self.hands_pushed: int = 0  # deprecated
         self.streaks: List[Streak] = []
         self.start_new_streak: bool = True
 
@@ -56,35 +56,40 @@ class Player:
 
         return ante
 
-    def gather_winnings(self, number_of_matches: int, ante=config.ANTE) -> int:
-        total_payout: int = number_of_matches * ante
+    def streak_eval(self, payback_amount):
+        streak_win: StreakWin = StreakWin(payback_amount)
 
-        if number_of_matches > 0:
-            self.bankroll += total_payout
+        # If there are streaks already and start a new streak is false.
+        if len(self.streaks) and self.start_new_streak is False:
+            # get the last streak and add to it
+            streak: Streak = self.streaks[-1]
+            _, last_win = streak.traverse_count()
+            last_win.next = streak_win
+
+        # If start a new streak is True, we start one.
+        # Previous local streak is overwritten.
+        if self.start_new_streak:
+            streak: Streak = Streak()
+            streak.head_win: StreakWin = streak_win
+            self.streaks.append(streak)
+
+        # If player won, this is the streak. Don't start a new one.
+        self.start_new_streak = False
+
+    def gather_winnings(self, payback: float) -> int:
+        self.bankroll += payback
+
+        if payback < config.ANTE:
+            self.hands_lost += 1
+            self.start_new_streak = True
+
+        if payback >= config.ANTE:
             self.regular_hands_won += 1
-            streak_win: StreakWin = StreakWin(total_payout)
+            self.streak_eval(payback)
 
-            # If there are streaks already and start a new streak is false.
-            if len(self.streaks) and self.start_new_streak is False:
-                # get the last streak and add to it
-                streak: Streak = self.streaks[-1] 
-                _, last_win = streak.traverse_count()
-                last_win.next = streak_win
+        return payback
 
-            # If start a new streak is True, we start one. 
-            # Previous streak is overwritten.
-            if self.start_new_streak:
-                streak: Streak = Streak()
-                streak.head_win: StreakWin = streak_win
-                self.streaks.append(streak)
-
-            # If player won, this is the streak. Don't start a new one.
-            self.start_new_streak = False
-
-        return total_payout
-
-    def won_jackpot(self, jackpot_bonus=config.JACKPOT_BONUS) -> int:
-        self.bankroll += jackpot_bonus
+    def won_jackpot(self, jackpot_bonus: int) -> int:
         self.jackpots_won += 1
 
         return jackpot_bonus

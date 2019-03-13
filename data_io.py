@@ -1,15 +1,36 @@
 import csv
 import os
-import glob
+import os.path
 from typing import List, Dict
 from datetime import datetime as dt
 import config
 from main import Dealer
 
-CURRENT_WORKING_DIR = os.getcwd()
+current_dir: str = os.getcwd()
+defaullt_dir: str = os.path.join(current_dir, 'data')
 
 
-def read_in_all_files_as_one(directory='data') -> List:
+def get_file_names(data_dir=None) -> List:
+    """
+    Reads all file_names from a given directory.
+    Parameters
+    ----------
+    data_dir: str
+        The directory to read. Default is 'data' in present working directory.
+    Returns
+    -------
+    list of file_names
+        Each csv is its own name in the list.
+    """
+    if data_dir is None:
+        data_dir = defaullt_dir
+    return [
+        name for name in os.listdir(data_dir)
+        if os.path.isfile(os.path.join(data_dir, name))
+    ]
+
+
+def read_in_each_file_as_one(file_name: str, data_dir=None) -> List:
     """
     Reads all csv's from a given directory.
     Parameters
@@ -21,20 +42,13 @@ def read_in_all_files_as_one(directory='data') -> List:
     list of OrderedDictionaries
         Each csv is its own list entry. Each ordered dict is the csv data.
     """
-    data_dir: str = os.path.join(CURRENT_WORKING_DIR, directory)
+    if data_dir is None:
+        data_dir = defaullt_dir
     result: List[Dict] = []
-    message = f'{data_dir} is not a path.'
-    if os.path.isdir(data_dir):
-        counter = 0
-        for file in glob.glob(f'{data_dir}/*'):
-            counter += 1
-            with open(file, newline='') as csv_file:
-                reader: csv.DictReader = csv.DictReader(csv_file)
-                for row in reader:
-                    result.append(row)
-        message = f'{counter} files opened.'
-
-    print(message)
+    with open(os.path.join(data_dir, file_name), newline='') as csv_file:
+        reader: csv.DictReader = csv.DictReader(csv_file)
+        for row in reader:
+            result.append(row)
 
     return result
 
@@ -63,8 +77,8 @@ def write_out_game_data(
         0 for it did not work.
     """
     now = dt.now()
-    right_now: str = f'{now.year}_{now.month}_{now.day}_{now.hour}_{now.minute}'
-    data_dir: str = os.path.join(CURRENT_WORKING_DIR, folder)
+    right_now: str = f'config_ante_{config.ANTE}'
+    data_dir: str = os.path.join(current_dir, folder)
     file_name = os.path.join(data_dir, f'{right_now}.csv')
 
     if not os.path.isdir(data_dir):
@@ -112,10 +126,9 @@ def verbose_print(players: List, dealer: Dealer) -> None:
                 longest_streak = streak_count
         print(f'Player {idx} bankroll: ${player.bankroll}')
         print(f'Player {idx} hit the jackpot: {player.jackpots_won} times.')
-        print(f'Player {idx} won regular hands: \
-            {player.regular_hands_won} times.')
+        print(f"Player {idx} won regular hands:"
+              f"{player.regular_hands_won} times.")
         print(f'Player {idx} lost: {player.hands_lost} times.')
-        print(f'Player {idx} pushed: {player.hands_pushed} times.')
         print(f'Player {idx} went to the atm: {player.had_to_use_atm} times.')
         print(f'Player {idx} longest streak: {longest_streak}')
         print('\n')

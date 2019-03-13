@@ -2,6 +2,7 @@ import config
 from typing import List
 import data_io
 from models import Dealer, Player
+import payout_calculation_service
 
 
 def start_session() -> dict:
@@ -47,19 +48,19 @@ def play_round(dealer: Dealer, players: List, current_round: int) -> None:
         ante: int = player.ante()
         dealer.gather_ante(ante)
         player_hand: List[int] = player.roll_hand()
-        winnings: int = dealer.evaluate_player_hand(dealer_hand, player_hand)
-        dealer.payout_winner(player.gather_winnings(winnings))
+        winning_die_count: int = dealer.evaluate_player_hand(
+            dealer_hand,
+            player_hand
+        )
+        payout = payout_calculation_service.calculate_payout(winning_die_count)
+        dealer.payout_winner(player.gather_winnings(payout))
 
-        if winnings == config.JACKPOT_MATCH_TOTAL:
-            dealer.payout_winner(player.won_jackpot())
-        if winnings == 0:
-            player.hands_lost += 1
+        if winning_die_count == 0:
             player.evaluate_bankroll()
-        if winnings == 1:
-            player.hands_pushed += 1
-
+        if winning_die_count == config.JACKPOT_MATCH_TOTAL:
+            player.won_jackpot(payout)
         round_data.update({f'player {idx} bankroll': player.bankroll})
-    
+
     return round_data
 
 
@@ -74,7 +75,6 @@ if __name__ == '__main__':
     while current_round <= number_of_rounds:
         current_round += 1
         write_out_data.append(play_round(dealer, players, current_round))
-
 
     data_io.write_out_game_data(write_out_data, write_out_data[0].keys())
     if config.VERBOSE:
