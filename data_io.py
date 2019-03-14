@@ -77,7 +77,7 @@ def write_out_game_data(
         0 for it did not work.
     """
     now = dt.now()
-    right_now: str = f'config_ante_{config.ANTE}'
+    right_now: str = f'{now.minute}{now.second}_config_ante_{config.ANTE}'
     data_dir: str = os.path.join(current_dir, folder)
     file_name = os.path.join(data_dir, f'{right_now}.csv')
 

@@ -1,5 +1,5 @@
 import config
-from typing import List
+from typing import List, Dict
 import data_io
 from models import Dealer, Player
 import payout_calculation_service
@@ -24,7 +24,7 @@ def start_session() -> dict:
     return {'dealer': dealer, 'players': players}
 
 
-def play_round(dealer: Dealer, players: List, current_round: int) -> None:
+def play_round(dealer: Dealer, players: List, current_round: int) -> Dict:
     """
     Plays a round of hands.
     Parameters
@@ -40,7 +40,7 @@ def play_round(dealer: Dealer, players: List, current_round: int) -> None:
         Counter for how many rounds have been played.
     Returns
     -------
-    None
+    Dict
     """
     round_data = {'round': current_round}
     dealer_hand: List[int] = dealer.roll_hand()
@@ -60,6 +60,7 @@ def play_round(dealer: Dealer, players: List, current_round: int) -> None:
         if winning_die_count == config.JACKPOT_MATCH_TOTAL:
             player.won_jackpot(payout)
         round_data.update({f'player {idx} bankroll': player.bankroll})
+        round_data.update({f'house {idx} bank': dealer.house_bank})
 
     return round_data
 
