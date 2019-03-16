@@ -11,7 +11,7 @@ VERBOSE = True
 JACKPOT_BONUS = 12
 #  all paybacks are multiplited by ante
 PAYBACK_SCHEDULE = {
-    'zero': .25,
+    'zero': .20,
     'one': 1,
     'two': 4,
     'jackpot': JACKPOT_BONUS
