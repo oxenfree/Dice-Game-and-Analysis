@@ -92,7 +92,7 @@ def write_out_game_data(
         counter += 1
 
     csv_file.close()
-    
+
     return counter
 
 
